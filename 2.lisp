@@ -16,14 +16,40 @@
   (let ((xxs (list))(start (half-digits (first range))))))
     
 
-(defparameter *s* 100)
-(defparameter *e* 600)
-(defparameter *range* (list 1000 6000))
 (defun in-range (range n) (and (>= n (first range)) (<= n (second range))))
-(loop for a from (half-digits (first *range*)) to (half-digits (second *range*)) if (in-range *range* (make-xx a)) collect (make-xx a))
 
-(loop for a from 0 to 10 if (< a 5) collect a)
+(defun order (n) (floor (log n 10)))
     
 (defun split-range (range)
   "split range into sub-ranges of same number of digits
-  e.g. 20-1002 -> 20-99 100-999 1000-1002")
+  e.g. 20-1002 -> 20-99 100-999 1000-1002"
+  (let
+      ((order-1 (order (first range)))
+       (order-2 (order (second range))))
+    (if (= order-1 order-2)
+        (list range)
+        (nconc
+          (split-range (list (first range) (1- (expt 10 order-2))))
+          (list (list (expt 10 order-2) (second range)))))))
+
+(defun xx-in-order-range (range)
+  (if (= 0 (mod (1+ (order (first range))) 2))
+      (loop for a
+            from (half-digits (first range))
+            to (half-digits (second range))
+            if (in-range range (make-xx a))
+            collect (make-xx a))
+      ; odd range, no xxs
+      (list)))
+
+(defun xx-in-range (range)
+  (mapcan #'xx-in-order-range (split-range range)))
+
+(defun part-1 (input)
+ (let*
+     ((xxs (loop for range in (parse-input input) nconc (xx-in-range range)))
+      (sum (loop for xx in xxs sum xx)))
+   sum))
+
+(part-1 *eg*)
+(part-1 (uiop:read-file-string "2.input"))
