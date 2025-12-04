@@ -32,3 +32,33 @@
 ; rest = list[findpos..]
 ; second digit: search rest[-11] (need to leave space for at least 11 digits after)
 ; third digit: search rest[-10]
+
+(defconstant +n-bats+ 12)
+; 0 -> butlast 11
+
+
+(loop for i from 0 below +n-bats+ collect (butlast *test* (- (1- +n-bats+) i)))
+(print *test*)
+(defparameter *test* '(8 1 1 1 1 1 1 1 1 1 1 1 1 1 9))
+
+(defun joltage-2 (bank)
+  (let*
+      ((rest-of-bank (copy-list bank))
+       (digits (list)))
+    (loop for i from 0 below +n-bats+ do
+          (let ((largest-idx (idx-of-largest (butlast rest-of-bank (- (1- +n-bats+) i)))))
+            (push (nth largest-idx rest-of-bank) digits)
+            (setf rest-of-bank (nthcdr (1+ largest-idx) rest-of-bank))))
+    (nreverse digits)))
+
+(defun make-num (digits)
+  (loop for dig in (reverse digits)
+        and i from 0
+        sum (* dig (expt 10 i)))) 
+
+   
+(defun part-2 (input)
+  (loop for bank in (parse-banks input) sum (make-num (joltage-2 bank))))
+
+(part-2 (uiop:read-file-lines "3.example"))
+(part-2 (uiop:read-file-lines "3.input"))
