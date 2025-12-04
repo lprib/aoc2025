@@ -10,31 +10,25 @@
         (coerce line 'list)))
     input))
 
-(defparameter *egb* (parse-banks (uiop:read-file-lines "3.example")))
+(defun idx-of-largest (bank) (position (reduce #'max bank) bank))
 
-(defun all-positions (needle haystack)
-  (loop
-    for element in haystack
-    and position from 0
-    when (eql element needle)
-    collect position))
+(defun joltage (bank)
+  (let*
+      ((bank-without-last (butlast bank))
+       (largest-idx (idx-of-largest (butlast bank)))
+       (bank-after-first (nthcdr (1+ largest-idx) bank))
+       (second-largest-idx (idx-of-largest bank-after-first)))
+    (+ (* 10 (nth largest-idx bank-without-last)) (nth second-largest-idx bank-after-first)))) 
 
-(defun max-first-digit-idxs (bank)
-  "return list of (pos next-digit)"
-  (let* ((relevent-idxs (butlast bank))
-         (max-digit (apply #'max relevent-idxs)))
-    (mapcar (lambda (pos) (list pos (nth (1+ pos) bank))) (all-positions max-digit relevent-idxs))))
+(defun part-1 (input)
+  (loop for bank in (parse-banks input) sum (joltage bank)))
 
-(defun max-second-digit-idxs (first-pairs)
-  (reduce (lambda (a b) (if (> (second a) (second b)) a b)) first-pairs))
+(part-1 (uiop:read-file-lines "3.example"))
+(part-1 (uiop:read-file-lines "3.input"))
 
-(let ((bank '(9 8 8 9 0 9)))
- (max-second-digit-idxs (max-first-digit-idxs bank)))
-
-(defun max-pair (bank)
-  (let ((index (first (max-second-digit-idxs (max-first-digit-idxs bank)))))
-    (+ (* (nth index bank) 10) (nth (1+ index) bank))))
-;; this shit is all wrong
-
-(mapcar #'max-pair *egb*)
-
+; part-2 
+; 12 digits of joltage
+; first digit: search list[-12]
+; rest = list[findpos..]
+; second digit: search rest[-11] (need to leave space for at least 11 digits after)
+; third digit: search rest[-10]
