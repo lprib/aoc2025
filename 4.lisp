@@ -27,8 +27,43 @@
     
 (defun num-adjacent (a y x)
   (apply #'+ (mapcar (lambda (off) (aref-oob a (+ y (first off)) (+ x (second off)))) +adj+)))
-  
-  
 
-(let ((a (parse-input (uiop:read-file-lines "4.example"))))
-  (print (num-adjacent a 0 0)))
+(defun should-remove (arr y x)
+  (and (= 1 (aref arr y x)) (< (num-adjacent arr y x) 4)))
+  
+(defun part-1 (lines)
+  (let ((arr (parse-input lines)) (accessible 0))
+    (loop for y from 0 below (array-dimension arr 0) do
+          (loop for x from 0 below (array-dimension arr 1) do
+                (when (should-remove arr y x)
+                  (incf accessible))))
+    accessible))
+
+(defun find-removable (arr)
+  (let ((to-remove (list)))
+    (loop for y from 0 below (array-dimension arr 0) do
+          (loop for x from 0 below (array-dimension arr 1) do
+                (when (should-remove arr y x)
+                  (push (list y x) to-remove))))
+    (nreverse to-remove)))
+
+(defun perform-removals (arr removals)
+  (loop for (y x) in removals do
+        (setf (aref arr y x) 0)))
+
+(defun part-2 (lines)
+  (let ((arr (parse-input lines)) (removed 0))
+    (loop
+      (let* ((removals (find-removable arr)))
+        (if (> (length removals) 0)
+            (progn
+              (incf removed (length removals))
+              (perform-removals arr removals))
+            (return removed))))))
+      
+    
+(part-1 (uiop:read-file-lines "4.example"))
+(part-1 (uiop:read-file-lines "4.input"))
+
+(part-2 (uiop:read-file-lines "4.example"))
+(part-2 (uiop:read-file-lines "4.input"))
