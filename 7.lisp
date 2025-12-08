@@ -18,37 +18,45 @@
                   (setf start-x x))))
     (values grid start-x)))
 
-; given stream-arr (list of bool) which is where the stream is, and splitters
-; which is list of bool where the splitters are, determine what the new stream
-; is. Also need to count then number of splits somehow
-
-(parse-grid (uiop:read-file-lines "7.example"))
-
-(defparameter *a* (make-array '(3 2) :initial-element 0))
-
 (defun row-slice (a row)
   (make-array
     (array-dimension a 1)
     :displaced-to a
     :displaced-index-offset (* row (array-dimension a 1))))
 
-(row-slice *a* 2)
+(defun split-stream (in-streams splitter-row)
+  (let*
+      ((w (length in-streams))
+       (out-streams (make-list w :initial-element nil))
+       (n-splits 0))
+    (loop
+      :for split-p :across splitter-row
+      :for in-stream-p :in in-streams
+      :for i :from 0
+      :when (and in-stream-p (not split-p)) :do
+        (setf (elt out-streams i) t)
+        :end
+      :when (and in-stream-p split-p) :do
+        (when (> i 0) (setf (elt out-streams (1- i)) t))
+        (when (< i (1- w)) (setf (elt out-streams (1+ i)) t))
+        (incf n-splits)
+        :end)
+    (values out-streams n-splits)))
 
-(defun elt-oob (seq i)
-  (if (and (<= 0 i) (> (length seq) i)) (elt seq i) nil))
+(defun part-1 (lines)
+  (multiple-value-bind (grid start-x) (parse-grid lines)
+    (let* ((n-splits 0)
+           (w (array-dimension grid 1))
+           (streams (make-list w :initial-element nil)))
+      (setf (elt streams start-x) t)
+      (loop :for row :from 0 :below (array-dimension grid 0) :do
+            (multiple-value-bind
+                (new-streams splits-this-row)
+                (split-stream streams (row-slice grid row))
+              (setf streams new-streams)
+              (incf n-splits splits-this-row)))
+      n-splits)))
 
-(defun split-single-row (streams splitter-row i)
-  (or
-    (and (elt streams i) (not (elt splitter-row i)))
-    (and (elt-oob streams (1- i)) (elt-oob splitter-row (1- i)))
-    (and (elt-oob streams (1+ i)) (elt-oob splitter-row (1+ i)))))
-    
+(part-1 (uiop:read-file-lines "7.example"))
+(part-1 (uiop:read-file-lines "7.input"))
 
-(defun split-stream (streams splitter-row)
-  (loop
-    for stream-p in streams
-    for i from 0
-    collect (split-single-row streams splitter-row i)))
-
-(split-stream '(nil nil t nil nil) '(nil nil t nil nil))
-; todo need to count the splits
