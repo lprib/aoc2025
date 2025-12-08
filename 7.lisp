@@ -37,8 +37,8 @@
         (setf (elt out-streams i) t)
         :end
       :when (and in-stream-p split-p) :do
-        (when (> i 0) (setf (elt out-streams (1- i)) t))
-        (when (< i (1- w)) (setf (elt out-streams (1+ i)) t))
+        (setf (elt out-streams (1- i)) t)
+        (setf (elt out-streams (1+ i)) t)
         (incf n-splits)
         :end)
     (values out-streams n-splits)))
@@ -57,6 +57,38 @@
               (incf n-splits splits-this-row)))
       n-splits)))
 
-(part-1 (uiop:read-file-lines "7.example"))
-(part-1 (uiop:read-file-lines "7.input"))
+(defun split-stream-multiverse (in-streams splitter-row)
+  (let*
+      ((w (length in-streams))
+       (out-streams (make-list w :initial-element 0)))
+    (loop
+      :for split-p :across splitter-row
+      :for in-stream :in in-streams
+      :for i :from 0
+      :when (not split-p) :do
+        (incf (elt out-streams i) in-stream)
+        :end
+      :when (and (/= 0 in-stream) split-p) :do
+        (incf (elt out-streams (1- i)) in-stream)
+        (incf (elt out-streams (1+ i)) in-stream)
+        :end)
+    out-streams))
+
+(defun part-2 (lines)
+  (multiple-value-bind (grid start-x) (parse-grid lines)
+    (let* ((w (array-dimension grid 1))
+           (streams (make-list w :initial-element 0)))
+      (setf (elt streams start-x) 1)
+      (loop :for row :from 0 :below (array-dimension grid 0)
+            :do
+            (let ((new-streams (split-stream-multiverse streams (row-slice grid row))))
+              (setf streams new-streams)))
+      (apply #'+ streams))))
+
+(assert (= (part-1 (uiop:read-file-lines "7.example")) 21))
+(assert (= (part-1 (uiop:read-file-lines "7.input")) 1658))
+
+(assert (= (part-2 (uiop:read-file-lines "7.example")) 40))
+(assert (= (part-2 (uiop:read-file-lines "7.input")) 53916299384254))
+
 
